@@ -1,3 +1,4 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -91,7 +92,6 @@ all_flags_df['Name'] = (
     .str.replace(r'(?i)^Flag\s*of\s*', '', regex=True)  # Remove "Flag of" (case insensitive)
     .str.replace(r'(?i)^\s*the\s*', '', regex=True)  # Remove "the" at the beginning (case insensitive)
     .str.replace(r'(?i)^\s*Flag\s*', '', regex=True)  # Remove "Flag" at the beginning (case insensitive)
-    .str.replace(r'\s*of\s*', ' ', regex=True)  # Replace "of" with a space (case insensitive)
     .str.replace(r'\s+', ' ', regex=True)  # Replace multiple spaces with a single space
     .str.strip()  # Remove any leading or trailing spaces
 )
@@ -101,6 +101,9 @@ def clean_city_name(name):
     if 'Most populated city in the world' in name:
         # If it contains the phrase, extract the part after the semicolon
         return name.split(';')[-1].strip()  # Get the last part and strip whitespace
+    # If the name contains a comma, split and take the first part
+    if ',' in name:
+        return name.split(',')[0].strip()  # Return the part before the comma
     return name
 
 all_flags_df['Name'] = all_flags_df['Name'].apply(clean_city_name)
@@ -132,6 +135,9 @@ def is_flag_entry(name):
 # Apply the filtering function
 all_flags_df = all_flags_df[all_flags_df['Name'].apply(is_flag_entry)]
 
+if not os.path.exists("csv"):
+    os.makedirs("csv")
+
 # Save the combined DataFrame to a single CSV file
-all_flags_df.to_csv('all_flags.csv', index=False)
+all_flags_df.to_csv('csv/all_flags.csv', index=False)
 print("Data has been saved to 'all_flags.csv'.")

@@ -1,11 +1,10 @@
 import os
 import csv
 import requests
-import re
 import shutil
 
 # Define the path to the CSV file and the folders
-csv_file_path = "all_flags.csv"
+csv_file_path = "csv/all_flags.csv"
 flags_folder = "flags"
 
 # Create the flags folder if it doesn't exist
@@ -50,8 +49,11 @@ with open(csv_file_path, mode='r', encoding='utf-8') as file:
         output_path = os.path.join(flags_folder, f"{flag_name}.png")
 
         try:
-            # Send a GET request to the image URL
-            response = requests.get(image_url)
+            # Send a GET request to the image URL with a User-Agent header
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36"
+            }
+            response = requests.get(image_url, headers=headers)
             response.raise_for_status()  # Check if the request was successful
 
             # Save the image to the specified path

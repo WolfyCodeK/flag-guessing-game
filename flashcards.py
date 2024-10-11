@@ -4,6 +4,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import messagebox
 import csv
+import pygame  # Import pygame for sound effects
 
 class FlagGuessingGame:
     def __init__(self, master):
@@ -16,11 +17,19 @@ class FlagGuessingGame:
         self.game_frame = tk.Frame(master, bg="#3A3A3A", bd=10, relief=tk.FLAT)
         self.game_frame.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
 
-        self.flags = self.load_flags("flags", "valid_answers.csv")
-        self.save_valid_answers()
+        self.valid_answers_path = "csv/valid_answers.csv"
+        self.flags = self.load_flags("flags", self.valid_answers_path)
+        self.initial_flags = self.load_flags("flags", self.valid_answers_path)
         self.score = 0
         self.total_flags = len(self.flags)
         self.current_question = 0  # Initialize the current question counter
+
+        # Initialize pygame mixer for sound effects
+        pygame.mixer.init()
+        
+        # Load sound effects
+        self.correct_sound = pygame.mixer.Sound("res/correct_answer.wav")
+        self.wrong_sound = pygame.mixer.Sound("res/wrong_answer.wav")
 
         self.flag_label = tk.Label(self.game_frame, bg="#3A3A3A")
         self.flag_label.pack(pady=20)
@@ -76,9 +85,9 @@ class FlagGuessingGame:
         return flags
 
     def save_valid_answers(self):
-        with open("valid_answers.csv", mode='w', encoding='utf-8', newline='') as file:
+        with open(self.valid_answers_path, mode='w', encoding='utf-8', newline='') as file:
             writer = csv.writer(file)
-            for flag_name, answers in self.flags.items():
+            for flag_name, answers in self.initial_flags.items():
                 writer.writerow([flag_name] + answers)
 
     def next_flag(self):
@@ -109,45 +118,157 @@ class FlagGuessingGame:
             self.score += 1
             result_message = "Correct!"
             self.score_label.config(text=f"Score: {self.score}/{self.total_flags}")
-            messagebox.showinfo("Result", result_message)  # Show result message
+            self.correct_sound.play()  # Play correct answer sound
+            self.correct_message_box(result_message)  # Show brief result message
+        
         else:
-            result_message = f"Wrong! The correct answer was: {self.flag_name}"
-            messagebox.showinfo("Result", result_message)  # Show result message
-            # Ask user if they want to register an alternative answer if they entered something
-            if guess:  # Only ask if the guess is not empty
-                self.ask_register_alternative(guess)
+            # Only show the register dialog if the user has written something
+            if guess:
+                self.show_register_dialog(guess)  # Show the register dialog
+            else:
+                self.show_message("Result", f"Wrong! The correct answer was: {self.flag_name}")
+                self.wrong_sound.play() 
 
+    def correct_message_box(self, message):
+        # Create a top-level window for the correct answer message
+        msg_box = tk.Toplevel(self.master)
+        msg_box.title("Result")
+        msg_box.configure(bg="#3A3A3A")
+
+        # Set the size of the message box
+        msg_box.geometry("200x125")
+
+        # Center the brief message box relative to the main window
+        x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 100
+        y = self.master.winfo_y() + (self.master.winfo_height() // 2) - 50
+        msg_box.geometry(f"+{x}+{y}")
+
+        msg_label = tk.Label(msg_box, text=message, bg="#3A3A3A", fg="white", font=("Arial", 12))
+        msg_label.pack(pady=20)
+
+        ok_button = tk.Button(msg_box, text="OK", command=msg_box.destroy,
+                              font=("Arial", 10), bg="#6B8E23", fg="white")
+        ok_button.pack(pady=5)
+
+        msg_box.transient(self.master)  # Keep it on top of the main window
+        msg_box.grab_set()  # Block interaction with the main window
+        msg_box.focus_force()  # Force focus to this message box
+
+        # Bind Enter key to dismiss the message box
+        msg_box.bind('<Return>', lambda event: self.next_and_destroy_msg(msg_box))
+        msg_box.protocol("WM_DELETE_WINDOW", self.next_and_destroy_msg)  # Allow window close via the window manager
+
+    def show_message(self, title, message):
+        msg_box = tk.Toplevel(self.master)
+        msg_box.title(title)
+        msg_box.configure(bg="#3A3A3A")
+
+        # Set the size of the message box
+        msg_box.geometry("300x125")
+
+        # Center the message box relative to the main window
+        x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 150
+        y = self.master.winfo_y() + (self.master.winfo_height() // 2) - 50
+        msg_box.geometry(f"+{x}+{y}")
+
+        msg_label = tk.Label(msg_box, text=message, bg="#3A3A3A", fg="white", font=("Arial", 12), wraplength=250)
+        msg_label.pack(pady=20)
+
+        ok_button = tk.Button(msg_box, text="OK", command=msg_box.destroy,
+                              font=("Arial", 10), bg="#6B8E23", fg="white")
+        ok_button.pack(pady=5)
+
+        msg_box.transient(self.master)  # Keep it on top of the main window
+        msg_box.grab_set()  # Block interaction with the main window
+        msg_box.focus_force()  # Force focus to this message box
+
+        # Bind Enter key to dismiss the message box
+        msg_box.bind('<Return>', lambda event: self.next_and_destroy_msg(msg_box))
+        msg_box.protocol("WM_DELETE_WINDOW", self.next_and_destroy_msg)  # Allow window close via the window manager
+
+    def show_register_dialog(self, guess):
+        # Create a top-level window for the registration dialog
+        self.register_dialog = tk.Toplevel(self.master)
+        self.register_dialog.title("Register Alternative Answer")
+        self.register_dialog.configure(bg="#3A3A3A")
+
+        # Set the size of the dialog
+        self.register_dialog.geometry("300x150")
+
+        # Center the dialog relative to the main window
+        x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 150
+        y = self.master.winfo_y() + (self.master.winfo_height() // 2) - 75
+        self.register_dialog.geometry(f"+{x}+{y}")
+
+        msg_label = tk.Label(self.register_dialog, 
+                             text=f"Would you like to register '{guess}' as an alternative answer for this flag?", 
+                             bg="#3A3A3A", 
+                             fg="white", 
+                             font=("Arial", 12), 
+                             wraplength=250)
+        msg_label.pack(pady=20)
+
+        yes_button = tk.Button(self.register_dialog, 
+                               text="Yes", 
+                               command=lambda: self.register_answer(guess),
+                               font=("Arial", 10), 
+                               bg="#6B8E23", 
+                               fg="white")
+        yes_button.pack(side=tk.LEFT, padx=20, pady=10)
+
+        no_button = tk.Button(self.register_dialog, 
+                              text="No", 
+                              command=self.stop_register,
+                              font=("Arial", 10), 
+                              bg="#6B8E23", 
+                              fg="white")
+        no_button.pack(side=tk.RIGHT, padx=20, pady=10)
+
+        self.register_dialog.transient(self.master)  # Keep it on top of the main window
+        self.register_dialog.grab_set()  # Block interaction with the main window
+        self.register_dialog.focus_force()  # Force focus to this dialog
+        
+        # Bind Enter key to dismiss the message box
+        self.register_dialog.bind('<Return>', lambda event: self.stop_register())
+        self.register_dialog.protocol("WM_DELETE_WINDOW", self.stop_register)  # Allow window close via the window manager
+        
+    def next_and_destroy_msg(self, msg_box):
+        msg_box.destroy()
+        
         self.entry.delete(0, tk.END)  # Clear entry field
         del self.flags[self.flag_name]  # Remove the flag from the game
-        self.next_flag()  # Load next flag
-
-    def ask_register_alternative(self, guess):
-        # Prompt for registering alternative answer
-        answer = messagebox.askyesno("Register Alternative Answer", 
-            "Would you like to register your answer as an alternative answer for this flag?")
         
-        if answer:
-            self.register_alternative(guess)
+        self.next_flag() 
 
-    def register_alternative(self, alt_answer):
-        if alt_answer:
-            if alt_answer not in self.flags[self.flag_name]:
-                self.flags[self.flag_name].append(alt_answer)
-                self.score += 1  # Increment score for registering an alternative answer
-                messagebox.showinfo("Success", f"'{alt_answer}' has been registered as an alternative answer. You earned a point!")
-                self.score_label.config(text=f"Score: {self.score}/{self.total_flags}")  # Update score label
-                self.save_valid_answers()  # Save updated answers
-            else:
-                messagebox.showinfo("Info", f"'{alt_answer}' is already a valid answer.")
+    def stop_register(self):
+        self.register_dialog.destroy()
+        self.show_message("Result", f"Wrong! The correct answer was: {self.flag_name}")
+        self.wrong_sound.play()
+
+    def register_answer(self, guess):
+        self.register_alternative(guess)  # Register the alternative answer
+        self.correct_sound.play()  # Play correct answer sound
+        self.register_dialog.destroy()
+        self.show_message("Answer Registered", "A new answer has been registered! You receive 1 point.")
+        self.score += 1  # Increment score for registering an answer
+        self.score_label.config(text=f"Score: {self.score}/{self.total_flags}")  # Update score display
+
+    def register_alternative(self, guess):
+        # Register the alternative answer
+        if self.flag_name in self.initial_flags:
+            self.initial_flags[self.flag_name].append(guess)  # Add to the existing answers
         else:
-            messagebox.showwarning("Warning", "Please enter an alternative answer.")
+            self.initial_flags[self.flag_name] = [guess]  # Create a new entry
+
+        # Save the updated valid answers to the CSV file
+        self.save_valid_answers()
 
     def end_game(self):
-        messagebox.showinfo("Game Over", f"Your final score: {self.score}/{self.total_flags}")
-        self.save_valid_answers()  # Save any remaining answers
-        self.master.quit()
+        # Show final score when game ends
+        self.show_message("Game Over", f"Your final score is: {self.score}/{self.total_flags}")
+        self.master.destroy()  # Close the application
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    game = FlagGuessingGame(root)
-    root.mainloop()
+# Create the main application window
+root = tk.Tk()
+game = FlagGuessingGame(root)
+root.mainloop()

@@ -5,9 +5,8 @@ import re
 import shutil
 
 # Define the path to the CSV file and the folders
-csv_file_path = "flag_image_urls.csv"
+csv_file_path = "all_flags.csv"
 flags_folder = "flags"
-additional_flags_folder = "additional flags"
 
 # Create the flags folder if it doesn't exist
 os.makedirs(flags_folder, exist_ok=True)
@@ -39,16 +38,6 @@ def copy_files(src_directory, dest_directory):
         except Exception as e:
             print(f"Failed to copy {src_file_path}: {e}")
 
-# Copy additional flags into the flags folder
-if os.path.exists(additional_flags_folder):
-    copy_files(additional_flags_folder, flags_folder)
-
-# Function to generate a valid filename
-def generate_valid_filename(flag_name):
-    # Use regex to keep only letters, numbers, spaces, and hyphens; remove other special characters
-    valid_flag_name = re.sub(r'[^A-Za-z0-9 \-]+', '', flag_name)  # Remove special characters, keep spaces and hyphens
-    return valid_flag_name
-
 # Read the flag data from the CSV file
 with open(csv_file_path, mode='r', encoding='utf-8') as file:
     reader = csv.reader(file)
@@ -58,9 +47,7 @@ with open(csv_file_path, mode='r', encoding='utf-8') as file:
         flag_name = row[0]
         image_url = row[1]
 
-        # Generate a valid filename
-        valid_flag_name = generate_valid_filename(flag_name)
-        output_path = os.path.join(flags_folder, f"{valid_flag_name}.png")
+        output_path = os.path.join(flags_folder, f"{flag_name}.png")
 
         try:
             # Send a GET request to the image URL

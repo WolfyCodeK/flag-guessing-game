@@ -10,7 +10,7 @@ class FlagGuessingGame:
     def __init__(self, master):
         self.master = master
         self.master.title("Flag Guessing Game")
-        self.master.geometry("500x500")
+        self.master.geometry("525x525")
         self.master.configure(bg="#2E2E2E")  # Dark background color
 
         # Create a frame for the main game area
@@ -55,6 +55,12 @@ class FlagGuessingGame:
 
         # Bind the Enter key to the check_guess method
         self.entry.bind('<Return>', lambda event: self.check_guess())
+        
+                # Mute button
+        self.is_muted = False  # Track mute state
+        self.mute_button = tk.Button(self.game_frame, text="Mute", command=self.toggle_mute,
+                                      font=("Arial", 10), bg="red", fg="white", padx=10, pady=5)
+        self.mute_button.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)  # Place in the bottom right of the frame
 
     def load_flags(self, folder, answers_file):
         flags = {}
@@ -118,7 +124,8 @@ class FlagGuessingGame:
             self.score += 1
             result_message = "Correct!"
             self.score_label.config(text=f"Score: {self.score}/{self.total_flags}")
-            self.correct_sound.play()  # Play correct answer sound
+            if not self.is_muted:  # Check mute state
+                self.correct_sound.play()  # Play correct answer sound  # Play correct answer sound
             self.correct_message_box(result_message)  # Show brief result message
         
         else:
@@ -127,7 +134,8 @@ class FlagGuessingGame:
                 self.show_register_dialog(guess)  # Show the register dialog
             else:
                 self.show_message("Result", f"Wrong! The correct answer was: {self.flag_name}")
-                self.wrong_sound.play() 
+                if not self.is_muted:  # Check mute state
+                    self.wrong_sound.play() 
 
     def correct_message_box(self, message):
         # Create a top-level window for the correct answer message
@@ -267,6 +275,14 @@ class FlagGuessingGame:
         # Show final score when game ends
         self.show_message("Game Over", f"Your final score is: {self.score}/{self.total_flags}")
         self.master.destroy()  # Close the application
+        
+    def toggle_mute(self):
+        self.is_muted = not self.is_muted  # Toggle mute state
+        # Update the button text based on mute state
+        if self.is_muted:
+            self.mute_button.config(text="Unmute")
+        else:
+            self.mute_button.config(text="Mute")
 
 # Create the main application window
 root = tk.Tk()

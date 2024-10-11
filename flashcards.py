@@ -139,60 +139,60 @@ class FlagGuessingGame:
 
     def correct_message_box(self, message):
         # Create a top-level window for the correct answer message
-        msg_box = tk.Toplevel(self.master)
-        msg_box.title("Result")
-        msg_box.configure(bg="#3A3A3A")
+        self.msg_box = tk.Toplevel(self.master)
+        self.msg_box.title("Result")
+        self.msg_box.configure(bg="#3A3A3A")
 
         # Set the size of the message box
-        msg_box.geometry("200x125")
+        self.msg_box.geometry("200x125")
 
         # Center the brief message box relative to the main window
         x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 100
         y = self.master.winfo_y() + (self.master.winfo_height() // 2) - 50
-        msg_box.geometry(f"+{x}+{y}")
+        self.msg_box.geometry(f"+{x}+{y}")
 
-        msg_label = tk.Label(msg_box, text=message, bg="#3A3A3A", fg="white", font=("Arial", 12))
+        msg_label = tk.Label(self.msg_box, text=message, bg="#3A3A3A", fg="white", font=("Arial", 12))
         msg_label.pack(pady=20)
 
-        ok_button = tk.Button(msg_box, text="OK", command=msg_box.destroy,
+        ok_button = tk.Button(self.msg_box, text="OK", command=self.next_and_destroy_msg,
                               font=("Arial", 10), bg="#6B8E23", fg="white")
         ok_button.pack(pady=5)
 
-        msg_box.transient(self.master)  # Keep it on top of the main window
-        msg_box.grab_set()  # Block interaction with the main window
-        msg_box.focus_force()  # Force focus to this message box
+        self.msg_box.transient(self.master)  # Keep it on top of the main window
+        self.msg_box.grab_set()  # Block interaction with the main window
+        self.msg_box.focus_force()  # Force focus to this message box
 
         # Bind Enter key to dismiss the message box
-        msg_box.bind('<Return>', lambda event: self.next_and_destroy_msg(msg_box))
-        msg_box.protocol("WM_DELETE_WINDOW", self.next_and_destroy_msg)  # Allow window close via the window manager
+        self.msg_box.bind('<Return>', lambda event: self.next_and_destroy_msg())
+        self.msg_box.protocol("WM_DELETE_WINDOW", self.next_and_destroy_msg)  # Allow window close via the window manager
 
     def show_message(self, title, message):
-        msg_box = tk.Toplevel(self.master)
-        msg_box.title(title)
-        msg_box.configure(bg="#3A3A3A")
+        self.msg_box = tk.Toplevel(self.master)
+        self.msg_box.title(title)
+        self.msg_box.configure(bg="#3A3A3A")
 
         # Set the size of the message box
-        msg_box.geometry("300x125")
+        self.msg_box.geometry("300x125")
 
         # Center the message box relative to the main window
         x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 150
         y = self.master.winfo_y() + (self.master.winfo_height() // 2) - 50
-        msg_box.geometry(f"+{x}+{y}")
+        self.msg_box.geometry(f"+{x}+{y}")
 
-        msg_label = tk.Label(msg_box, text=message, bg="#3A3A3A", fg="white", font=("Arial", 12), wraplength=250)
+        msg_label = tk.Label(self.msg_box, text=message, bg="#3A3A3A", fg="white", font=("Arial", 12), wraplength=250)
         msg_label.pack(pady=20)
 
-        ok_button = tk.Button(msg_box, text="OK", command=msg_box.destroy,
+        ok_button = tk.Button(self.msg_box, text="OK", command=self.next_and_destroy_msg,
                               font=("Arial", 10), bg="#6B8E23", fg="white")
         ok_button.pack(pady=5)
 
-        msg_box.transient(self.master)  # Keep it on top of the main window
-        msg_box.grab_set()  # Block interaction with the main window
-        msg_box.focus_force()  # Force focus to this message box
+        self.msg_box.transient(self.master)  # Keep it on top of the main window
+        self.msg_box.grab_set()  # Block interaction with the main window
+        self.msg_box.focus_force()  # Force focus to this message box
 
         # Bind Enter key to dismiss the message box
-        msg_box.bind('<Return>', lambda event: self.next_and_destroy_msg(msg_box))
-        msg_box.protocol("WM_DELETE_WINDOW", self.next_and_destroy_msg)  # Allow window close via the window manager
+        self.msg_box.bind('<Return>', lambda event: self.next_and_destroy_msg())
+        self.msg_box.protocol("WM_DELETE_WINDOW", self.next_and_destroy_msg)  # Allow window close via the window manager
 
     def show_register_dialog(self, guess):
         # Create a top-level window for the registration dialog
@@ -240,8 +240,8 @@ class FlagGuessingGame:
         self.register_dialog.bind('<Return>', lambda event: self.stop_register())
         self.register_dialog.protocol("WM_DELETE_WINDOW", self.stop_register)  # Allow window close via the window manager
         
-    def next_and_destroy_msg(self, msg_box):
-        msg_box.destroy()
+    def next_and_destroy_msg(self):
+        self.msg_box.destroy()
         
         self.entry.delete(0, tk.END)  # Clear entry field
         del self.flags[self.flag_name]  # Remove the flag from the game

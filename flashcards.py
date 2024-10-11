@@ -5,16 +5,19 @@ from PIL import Image, ImageTk
 from tkinter import messagebox
 import csv
 import pygame  # Import pygame for sound effects
+import webbrowser  # Import webbrowser to open Wikipedia links
 
 class FlagGuessingGame:
     def __init__(self, master):
+        self.bg_colour = "black"
+        
         self.master = master
         self.master.title("Flag Guessing Game")
         self.master.geometry("525x525")
-        self.master.configure(bg="#2E2E2E")  # Dark background color
+        self.master.configure(bg=self.bg_colour)  # Dark background color
 
         # Create a frame for the main game area
-        self.game_frame = tk.Frame(master, bg="#3A3A3A", bd=10, relief=tk.FLAT)
+        self.game_frame = tk.Frame(master, bg=self.bg_colour, bd=10, relief=tk.FLAT)
         self.game_frame.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
 
         self.valid_answers_path = "csv/valid_answers.csv"
@@ -31,8 +34,19 @@ class FlagGuessingGame:
         self.correct_sound = pygame.mixer.Sound("res/correct_answer.wav")
         self.wrong_sound = pygame.mixer.Sound("res/wrong_answer.wav")
 
-        self.flag_label = tk.Label(self.game_frame, bg="#3A3A3A")
-        self.flag_label.pack(pady=20)
+        self.flag_label = tk.Label(self.game_frame, bg=self.bg_colour)
+        self.flag_label.pack(pady=10)
+        
+        # Create a label for the Wikipedia link (styled like a hyperlink)
+        self.link_label = tk.Label(self.game_frame, text="Learn more on Wikipedia", font=("Arial", 12), fg="blue", bg=self.bg_colour, cursor="hand2")
+        self.link_label.pack(pady=10)
+
+        # Bind the link to the Wikipedia URL
+        self.link_label.bind("<Button-1>", lambda event: self.open_wikipedia_link(event))
+
+        # Bind hover events to change color when hovering over the link
+        self.link_label.bind("<Enter>", self.on_link_hover)
+        self.link_label.bind("<Leave>", self.on_link_leave)
 
         self.entry = tk.Entry(self.game_frame, font=("Arial", 14), justify='center', bg="#4A4A4A", fg="white", insertbackground='white')
         self.entry.pack(pady=10, padx=10, fill=tk.X)
@@ -42,11 +56,11 @@ class FlagGuessingGame:
         self.submit_button.pack(pady=10)
 
         self.score_label = tk.Label(self.game_frame, text=f"Score: {self.score}/{self.total_flags}",
-                                     font=("Arial", 12), bg="#3A3A3A", fg="white")
-        self.score_label.pack(pady=20)
+                                     font=("Arial", 12), bg=self.bg_colour, fg="white")
+        self.score_label.pack(pady=10)
 
         self.question_label = tk.Label(self.game_frame, text=f"Question: {self.current_question}/{self.total_flags}",
-                                        font=("Arial", 12), bg="#3A3A3A", fg="white")
+                                        font=("Arial", 12), bg=self.bg_colour, fg="white")
         self.question_label.pack(pady=10)
 
         self.next_flag()
@@ -56,7 +70,7 @@ class FlagGuessingGame:
         # Bind the Enter key to the check_guess method
         self.entry.bind('<Return>', lambda event: self.check_guess())
         
-                # Mute button
+        # Mute button
         self.is_muted = False  # Track mute state
         self.mute_button = tk.Button(self.game_frame, text="Mute", command=self.toggle_mute,
                                       font=("Arial", 10), bg="red", fg="white", padx=10, pady=5)
@@ -104,6 +118,10 @@ class FlagGuessingGame:
         self.flag_name, valid_answers = random.choice(list(self.flags.items()))
         self.show_flag_image(os.path.join("flags", f"{self.flag_name}.png"))
 
+        # Generate Wikipedia link for the current flag
+        self.wiki_link = f"https://en.wikipedia.org/wiki/{self.flag_name.replace(' ', '_')}"
+        self.link_label.config(text=f"Learn more on Wikipedia", fg="blue", cursor="hand2")
+
         # Update the question counter
         self.current_question += 1
         self.question_label.config(text=f"Question: {self.current_question}/{self.total_flags}")  # Update question label
@@ -137,21 +155,32 @@ class FlagGuessingGame:
                 if not self.is_muted:  # Check mute state
                     self.wrong_sound.play() 
 
+    def open_wikipedia_link(self, event):
+        webbrowser.open(self.wiki_link)  # Open the Wikipedia link in the browser
+        
+    def on_link_hover(self, event):
+        # Change link color to red when hovered
+        event.widget.config(fg="white")
+
+    def on_link_leave(self, event):
+        # Change link color back to blue when not hovered
+        event.widget.config(fg="blue")
+
     def correct_message_box(self, message):
         # Create a top-level window for the correct answer message
         self.msg_box = tk.Toplevel(self.master)
         self.msg_box.title("Result")
-        self.msg_box.configure(bg="#3A3A3A")
+        self.msg_box.configure(bg=self.bg_colour)
 
         # Set the size of the message box
-        self.msg_box.geometry("200x125")
+        self.msg_box.geometry("200x150")
 
         # Center the brief message box relative to the main window
         x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 100
         y = self.master.winfo_y() + (self.master.winfo_height() // 2) - 50
         self.msg_box.geometry(f"+{x}+{y}")
 
-        msg_label = tk.Label(self.msg_box, text=message, bg="#3A3A3A", fg="white", font=("Arial", 12))
+        msg_label = tk.Label(self.msg_box, text=message, bg=self.bg_colour, fg="white", font=("Arial", 12))
         msg_label.pack(pady=20)
 
         ok_button = tk.Button(self.msg_box, text="OK", command=self.next_and_destroy_msg,
@@ -169,17 +198,17 @@ class FlagGuessingGame:
     def show_message(self, title, message):
         self.msg_box = tk.Toplevel(self.master)
         self.msg_box.title(title)
-        self.msg_box.configure(bg="#3A3A3A")
+        self.msg_box.configure(bg=self.bg_colour)
 
         # Set the size of the message box
-        self.msg_box.geometry("300x125")
+        self.msg_box.geometry("300x150")
 
         # Center the message box relative to the main window
         x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 150
         y = self.master.winfo_y() + (self.master.winfo_height() // 2) - 50
         self.msg_box.geometry(f"+{x}+{y}")
 
-        msg_label = tk.Label(self.msg_box, text=message, bg="#3A3A3A", fg="white", font=("Arial", 12), wraplength=250)
+        msg_label = tk.Label(self.msg_box, text=message, bg=self.bg_colour, fg="white", font=("Arial", 12), wraplength=250)
         msg_label.pack(pady=20)
 
         ok_button = tk.Button(self.msg_box, text="OK", command=self.next_and_destroy_msg,
@@ -198,10 +227,10 @@ class FlagGuessingGame:
         # Create a top-level window for the registration dialog
         self.register_dialog = tk.Toplevel(self.master)
         self.register_dialog.title("Register Alternative Answer")
-        self.register_dialog.configure(bg="#3A3A3A")
+        self.register_dialog.configure(bg=self.bg_colour)
 
         # Set the size of the dialog
-        self.register_dialog.geometry("300x150")
+        self.register_dialog.geometry("300x175")
 
         # Center the dialog relative to the main window
         x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 150
@@ -209,8 +238,8 @@ class FlagGuessingGame:
         self.register_dialog.geometry(f"+{x}+{y}")
 
         msg_label = tk.Label(self.register_dialog, 
-                             text=f"Would you like to register '{guess}' as an alternative answer for this flag?", 
-                             bg="#3A3A3A", 
+                             text=f"Would you like to register '{guess}' for {self.flag_name} as an alternative answer for this flag?", 
+                             bg=self.bg_colour, 
                              fg="white", 
                              font=("Arial", 12), 
                              wraplength=250)

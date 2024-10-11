@@ -100,10 +100,10 @@ all_flags_df['Name'] = (
 def clean_city_name(name):
     if 'Most populated city in the world' in name:
         # If it contains the phrase, extract the part after the semicolon
-        return name.split(';')[-1].strip()  # Get the last part and strip whitespace
+        name = name.split(';')[-1].strip()  # Get the last part and strip whitespace
     # If the name contains a comma, split and take the first part
     if ',' in name:
-        return name.split(',')[0].strip()  # Return the part before the comma
+        name = name.split(',')[0].strip()  # Return the part before the comma
     return name
 
 all_flags_df['Name'] = all_flags_df['Name'].apply(clean_city_name)

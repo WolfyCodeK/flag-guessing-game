@@ -1,3 +1,6 @@
 additional flags
 flags
 csv
+build
+dist
+*.spec

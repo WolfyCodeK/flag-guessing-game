@@ -27,22 +27,22 @@ flags_df1 = pd.DataFrame({'Name': country_names, 'URL': flag_images})
 all_flags_df = pd.concat([all_flags_df, flags_df1], ignore_index=True)
 
 # SCRIPT 2: Micronations Flags
-url2 = "https://en.wikipedia.org/wiki/Flags_of_micronations"
-response2 = requests.get(url2)
-soup2 = BeautifulSoup(response2.content, 'html.parser')
-flags_data2 = []
-gallery_boxes = soup2.find_all('li', class_='gallerybox')
+# url2 = "https://en.wikipedia.org/wiki/Flags_of_micronations"
+# response2 = requests.get(url2)
+# soup2 = BeautifulSoup(response2.content, 'html.parser')
+# flags_data2 = []
+# gallery_boxes = soup2.find_all('li', class_='gallerybox')
 
-for box in gallery_boxes:
-    flag_img = box.find('img')
-    if flag_img:
-        flag_url = 'https:' + flag_img['src']
-        name_link = box.find('div', class_='gallerytext').find('a')
-        micronation_name = name_link.get_text(strip=True) if name_link else None
-        flags_data2.append((micronation_name, flag_url))
+# for box in gallery_boxes:
+#     flag_img = box.find('img')
+#     if flag_img:
+#         flag_url = 'https:' + flag_img['src']
+#         name_link = box.find('div', class_='gallerytext').find('a')
+#         micronation_name = name_link.get_text(strip=True) if name_link else None
+#         flags_data2.append((micronation_name, flag_url))
 
-flags_df2 = pd.DataFrame(flags_data2, columns=['Name', 'URL'])
-all_flags_df = pd.concat([all_flags_df, flags_df2], ignore_index=True)
+# flags_df2 = pd.DataFrame(flags_data2, columns=['Name', 'URL'])
+# all_flags_df = pd.concat([all_flags_df, flags_df2], ignore_index=True)
 
 # SCRIPT 3: City Flags
 url3 = 'https://en.wikipedia.org/wiki/Lists_of_city_flags'

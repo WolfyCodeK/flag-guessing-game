@@ -6,6 +6,7 @@ from tkinter import messagebox
 import csv
 import pygame  # Import pygame for sound effects
 import webbrowser  # Import webbrowser to open Wikipedia links
+import time  # Import time to track elapsed time
 
 class FlagGuessingGame:
     def __init__(self, master):
@@ -15,6 +16,8 @@ class FlagGuessingGame:
         self.master.title("Flag Guesser")
         self.master.geometry("525x525")
         self.master.configure(bg=self.bg_colour)  # Dark background color
+        
+        self.game_ended = False
 
         # Create a frame for the main game area
         self.game_frame = tk.Frame(master, bg=self.bg_colour, bd=10, relief=tk.FLAT)
@@ -39,6 +42,9 @@ class FlagGuessingGame:
 
         self.entry = tk.Entry(self.game_frame, font=("Arial", 14), justify='center', bg="#4A4A4A", fg="white", insertbackground='white')
         self.entry.pack(pady=10, padx=10, fill=tk.X)
+        
+        # Add key release event binding to check for valid answer
+        self.entry.bind('<KeyRelease>', self.auto_submit_if_correct)
 
         self.submit_button = tk.Button(self.game_frame, text="Submit Guess", command=self.check_guess,
                                         font=("Arial", 12), bg="#6B8E23", fg="white", padx=10, pady=5)
@@ -52,6 +58,13 @@ class FlagGuessingGame:
                                         font=("Arial", 12), bg=self.bg_colour, fg="white")
         self.question_label.pack(pady=10)
 
+        # Timer label to display elapsed time
+        self.timer_label = tk.Label(self.game_frame, text="Time: 0s", font=("Arial", 12), bg=self.bg_colour, fg="white")
+        self.timer_label.pack(pady=10)
+
+        self.start_time = time.time()  # Store the start time
+        self.update_timer()  # Start updating the timer
+
         self.next_flag()
         
         self.entry.focus_set()
@@ -64,6 +77,15 @@ class FlagGuessingGame:
         self.mute_button = tk.Button(self.game_frame, text="Mute", command=self.toggle_mute,
                                       font=("Arial", 10), bg="red", fg="white", padx=10, pady=5)
         self.mute_button.pack(side=tk.BOTTOM, anchor=tk.SE, padx=10, pady=10)  # Place in the bottom right of the frame
+
+    def update_timer(self):
+        if not self.game_ended:
+            elapsed_time = int(time.time() - self.start_time)  # Calculate elapsed time in seconds
+            minutes, seconds = divmod(elapsed_time, 60)  # Convert seconds to minutes and seconds
+            self.time_formatted = f"{minutes:02}:{seconds:02}"  # Format the time as MM:SS
+            self.timer_label.config(text=f"Time Elapsed: {self.time_formatted}")  # Update the timer label
+            
+            self.master.after(1000, self.update_timer)  # Call this function again after 1 second
 
     def load_flags(self, folder, answers_file):
         flags = {}
@@ -111,6 +133,9 @@ class FlagGuessingGame:
         self.current_question += 1
         self.question_label.config(text=f"Question: {self.current_question}/{self.total_flags}")  # Update question label
 
+        # Clear the text box for the next flag
+        self.entry.delete(0, tk.END)
+
     def show_flag_image(self, flag_path):
         img = Image.open(flag_path)
         img = img.resize((300, 150))  # Resize for display
@@ -123,14 +148,12 @@ class FlagGuessingGame:
         valid_answers = self.flags[self.flag_name] + [self.flag_name]  # Get valid answers for the current flag
 
         # Check if the guess matches any valid answers in a case-insensitive manner
-        if guess.lower() in [answer.lower() for answer in valid_answers]:
+        if (guess.lower() in [answer.lower() for answer in valid_answers]) and guess != "":
             self.score += 1
-            result_message = "Correct!"
             self.score_label.config(text=f"Score: {self.score}/{self.total_flags}")
             if not self.is_muted:  # Check mute state
-                self.correct_sound.play()  # Play correct answer sound  # Play correct answer sound
-            self.correct_message_box(result_message)  # Show brief result message
-        
+                self.correct_sound.play()  # Play correct answer sound
+            self.next_flag()
         else:
             # Only show the register dialog if the user has written something
             if guess:
@@ -139,6 +162,13 @@ class FlagGuessingGame:
                 self.wrong_message_box("Result", f"Wrong! The correct answer was: {self.flag_name}")
                 if not self.is_muted:  # Check mute state
                     self.wrong_sound.play() 
+
+    def auto_submit_if_correct(self, event):
+        guess = self.entry.get().strip()
+        valid_answers = self.flags[self.flag_name] + [self.flag_name]
+
+        if guess.lower() in [answer.lower() for answer in valid_answers]:
+            self.submit_button.invoke()
 
     def open_wikipedia_link(self, event):
         webbrowser.open(self.wiki_link)  # Open the Wikipedia link in the browser
@@ -150,35 +180,6 @@ class FlagGuessingGame:
     def on_link_leave(self, event):
         # Change link color back to blue when not hovered
         event.widget.config(fg="blue")
-
-    def correct_message_box(self, message):
-        # Create a top-level window for the correct answer message
-        self.msg_box = tk.Toplevel(self.master)
-        self.msg_box.title("Result")
-        self.msg_box.configure(bg=self.bg_colour)
-
-        # Set the size of the message box
-        self.msg_box.geometry("200x150")
-
-        # Center the brief message box relative to the main window
-        x = self.master.winfo_x() + (self.master.winfo_width() // 2) - 100
-        y = self.master.winfo_y() + (self.master.winfo_height() // 2) - 50
-        self.msg_box.geometry(f"+{x}+{y}")
-
-        msg_label = tk.Label(self.msg_box, text=message, bg=self.bg_colour, fg="white", font=("Arial", 12))
-        msg_label.pack(pady=20)
-
-        ok_button = tk.Button(self.msg_box, text="OK", command=self.next_and_destroy_msg,
-                              font=("Arial", 10), bg="#6B8E23", fg="white")
-        ok_button.pack(pady=5)
-
-        self.msg_box.transient(self.master)  # Keep it on top of the main window
-        self.msg_box.grab_set()  # Block interaction with the main window
-        self.msg_box.focus_force()  # Force focus to this message box
-
-        # Bind Enter key to dismiss the message box
-        self.msg_box.bind('<Return>', lambda event: self.next_and_destroy_msg())
-        self.msg_box.protocol("WM_DELETE_WINDOW", self.next_and_destroy_msg)  # Allow window close via the window manager
 
     def wrong_message_box(self, title, message):
         self.msg_box = tk.Toplevel(self.master)
@@ -239,7 +240,7 @@ class FlagGuessingGame:
         msg_label = tk.Label(self.msg_box, text=message, bg=self.bg_colour, fg="white", font=("Arial", 12), wraplength=250)
         msg_label.pack(pady=20)
 
-        ok_button = tk.Button(self.msg_box, text="OK", command=self.next_and_destroy_msg,
+        ok_button = tk.Button(self.msg_box, text="OK", command=self.master.destroy,
                               font=("Arial", 10), bg="#6B8E23", fg="white")
         ok_button.pack(pady=5)
 
@@ -319,7 +320,6 @@ class FlagGuessingGame:
         self.score_label.config(text=f"Score: {self.score}/{self.total_flags}")  # Update score display
 
     def register_alternative(self, guess):
-        # Register the alternative answer
         if self.flag_name in self.initial_flags:
             self.initial_flags[self.flag_name].append(guess)  # Add to the existing answers
         else:
@@ -329,9 +329,9 @@ class FlagGuessingGame:
         self.save_valid_answers()
 
     def end_game(self):
-        # Show final score when game ends
-        self.game_finished_message_box("Game Over", f"Your final score is: {self.score}/{self.total_flags}")
-        
+        self.game_finished_message_box("Game Over", f"Your final score is: {self.score}/{self.total_flags}\n\nTime player for: {self.time_formatted}")
+        self.game_ended = True
+
     def toggle_mute(self):
         self.is_muted = not self.is_muted  # Toggle mute state
         # Update the button text based on mute state

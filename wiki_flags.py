@@ -83,6 +83,23 @@ for item in gallery_items:
     else:
         image_urls.append(None)
 
+# Add additonal flags not found on wiki page
+names.append('Guadeloupe (unofficial)')
+image_urls.append('https://upload.wikimedia.org/wikipedia/commons/e/e7/Unofficial_flag_of_Guadeloupe_%28local%29.svg')
+
+names.append('Guadeloupe (official)')
+image_urls.append('https://upload.wikimedia.org/wikipedia/commons/d/d1/Flag_of_Guadeloupe_%28UPLG%29.svg')
+
+names.append('French Guiana')
+image_urls.append('https://upload.wikimedia.org/wikipedia/commons/2/29/Flag_of_French_Guiana.svg')
+
+names.append('Mayotte')
+image_urls.append('https://upload.wikimedia.org/wikipedia/commons/b/bf/Coat_of_Arms_of_Mayotte.svg')
+
+names.append('Reunion')
+image_urls.append('https://upload.wikimedia.org/wikipedia/commons/8/8e/Proposed_flag_of_R%C3%A9union_%28VAR%29.svg')
+
+
 flags_df4 = pd.DataFrame({'Name': names, 'URL': image_urls})
 all_flags_df = pd.concat([all_flags_df, flags_df4], ignore_index=True)
 

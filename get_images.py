@@ -1,7 +1,7 @@
 import os
 import csv
 import requests
-import shutil
+from cairosvg import svg2png
 
 # Define the path to the CSV file and the folders
 csv_file_path = "csv/all_flags.csv"
@@ -25,17 +25,24 @@ def clear_directory(directory):
 # Clear the flags folder
 clear_directory(flags_folder)
 
-# Function to copy files from one directory to another
-def copy_files(src_directory, dest_directory):
-    for filename in os.listdir(src_directory):
-        src_file_path = os.path.join(src_directory, filename)
-        dest_file_path = os.path.join(dest_directory, filename)
+# Function to download and handle images
+def download_and_convert_image(url, output_path):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+
+    if url.lower().endswith('.svg'):
         try:
-            if os.path.isfile(src_file_path):
-                shutil.copy2(src_file_path, dest_file_path)  # Copy files
-                print(f"Copied {src_file_path} to {dest_file_path}")
+            svg2png(bytestring=response.content, write_to=output_path)
+            print(f"SVG converted and saved as PNG to {output_path}")
         except Exception as e:
-            print(f"Failed to copy {src_file_path}: {e}")
+            print(f"Failed to convert SVG to PNG for {url}: {e}")
+    else:
+        with open(output_path, "wb") as image_file:
+            image_file.write(response.content)
+        print(f"Image successfully saved to {output_path}")
 
 # Read the flag data from the CSV file
 with open(csv_file_path, mode='r', encoding='utf-8') as file:
@@ -49,18 +56,7 @@ with open(csv_file_path, mode='r', encoding='utf-8') as file:
         output_path = os.path.join(flags_folder, f"{flag_name}.png")
 
         try:
-            # Send a GET request to the image URL with a User-Agent header
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36"
-            }
-            response = requests.get(image_url, headers=headers)
-            response.raise_for_status()  # Check if the request was successful
-
-            # Save the image to the specified path
-            with open(output_path, "wb") as image_file:
-                image_file.write(response.content)
-
-            print(f"Image successfully saved to {output_path}")
+            download_and_convert_image(image_url, output_path)
         except Exception as e:
             print(f"Failed to download or save {flag_name}: {e}")
 
